@@ -12,7 +12,7 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 
 
 **Final operations run on CSV file, fina and replace bad unicode text**
-â€œ = " (beginning quote)
-â€™ = ' (apostrophe)
-â€ = " (end quote)
+* Item â€œ = " (beginning quote)
+* Item â€™ = ' (apostrophe)
+* Item â€ = " (end quote)
 
