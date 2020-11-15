@@ -3,7 +3,7 @@ Youtube Comment Generator
 
 Final Project for Deep Learning ECE 6554 (Virginia Tech)
 
-** Objectives:
+** Objectives: **
 1. Item Using Kaggle Youtube dataset, train a sentiment analyzer.
 2. Item Use trained analyzer on youtube comments/replies gathered from video.
 2. Item Generate fake comments based on existing comments from videos, using a sample word. (Train ~100-200 comments)
