@@ -15,6 +15,7 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 * â€œ = " (beginning quote)
 * â€™ = ' (apostrophe)
 * â€ = " (end quote)
+* œ = (replace with nothing.)
 
 **Get the first word from cell in excel spread sheet**
 =IF(ISERR(FIND(" ",A2)),A2, LEFT(A2, FIND(" ",A2)-1))
