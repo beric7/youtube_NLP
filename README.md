@@ -25,3 +25,4 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 
 
 ![alt text](https://github.com/beric7/youtube_NLP/blob/main/Figure%201.png)
+![alt text](https://github.com/beric7/youtube_NLP/blob/main/Figure%202.png)
