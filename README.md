@@ -20,3 +20,5 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 **Get the first word from cell in excel spread sheet**
 =IF(ISERR(FIND(" ",A2)),A2, LEFT(A2, FIND(" ",A2)-1))
 
+**Run the program**
+- Use the run-file to run all the functions in Youtube_5
