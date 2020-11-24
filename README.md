@@ -24,4 +24,4 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 - Use the run-file to run all the functions in Youtube_5
 
 
-![alt text](https://github.com/beric7/youtube_NLP/blob/'Figure 1.png'?raw=true)
+![alt text](https://github.com/beric7/youtube_NLP/blob/main/Figure%201.png)
