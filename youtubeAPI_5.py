@@ -25,6 +25,13 @@ import itertools
 import collections
 import matplotlib.pyplot as plt
 
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords  
+from nltk.tokenize import word_tokenize
+nltk.download('punkt')
+from nltk.tokenize.treebank import TreebankWordDetokenizer
+
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -93,7 +100,8 @@ def extract_video_details(query_results):
     
     return video_id, channel, video_title, video_desc
 
-# This is the function that extracts comments. The extraction originally put all the comments
+# This is the function that extracts comments and the comments' corresponding replies. 
+# The extraction originally put all the comments
 # into an array which was later turned into a CSV file. It is better suited, 
 # due to memory contraints, if they were added directly to the CSV file as it was 
 # being read. This way we do not have to store the text in the CPU memory, this is what I did.
@@ -105,7 +113,7 @@ def extract_video_details(query_results):
 # @param: save_csv_location = where the csv file is being saved
 # @param: the number of iterations
 # @param: type_ = the type of ordering for the response, (time = more, relevance caps at 2000)
-def extract_comments(video_id, channel, video_title, video_desc, save_csv_location, number, type_, service):
+def extract_comments_with_replies(video_id, channel, video_title, video_desc, save_csv_location, number, type_, service):
     nextPage_token = None
     count = 0
         
@@ -172,16 +180,72 @@ def get_reply(item, service):
     reply_text = encode_decode(reply_text)
     return reply_text
 
+# This is the function that extracts comments ONLY. The extraction originally put all the comments
+# into an array which was later turned into a CSV file. It is better suited, 
+# due to memory contraints, if they were added directly to the CSV file as it was 
+# being read. This way we do not have to store the text in the CPU memory, this is what I did.
+# 
+# @param: video_id = unique youtube video ID
+# @param: channel = unique channel video is on
+# @param: video_title = video title
+# @param: video_desc = video description
+# @param: save_csv_location = where the csv file is being saved
+# @param: the number of iterations
+# @param: type_ = the type of ordering for the response, (time = more, relevance caps at 2000)
+def extract_comments_with_no_replies(video_id, channel, video_title, video_desc, save_csv_location, number, type_, service):
+    nextPage_token = None
+    count = 0
+        
+    with open(save_csv_location, 'w', newline='', encoding='utf-8-sig') as csvfile:
+        fieldnames = ['Comment', 'Initial Reply', 'Replies', 'Likes']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    
+        writer.writeheader()
+        # this captures the bulk of the information, but may miss out on the most relevant comments
+        while 1:
+          response = service.commentThreads().list(
+                            part = 'snippet, replies',
+                            videoId = video_id,
+                            maxResults = 100, 
+                            order = type_, 
+                            textFormat = 'plainText',
+                            pageToken = nextPage_token
+                            ).execute()
+          nextPage_token = response.get('nextPageToken')
+          
+          for item in response['items']:
+              if 'replies' not in item.keys():
+                  
+                  comment_text = item['snippet']['topLevelComment']['snippet']['textDisplay']
+                  comment_text = encode_decode(demojize(comment_text))
+                  
+                  writer.writerow({'Comment': comment_text,
+                                   'Likes': item['snippet']['topLevelComment']['snippet']['likeCount']})        
+                  count = count + 1
+                  if (count % 50) == 0:
+                      print(count)
+          if nextPage_token is None or count > number:
+            break
 # search your emoji
 def is_emoji(s):
     return s in UNICODE_EMOJI
 
 # add space near your emoji
-def add_space(text):
+def add_space_by_emjoi(text):
     return ''.join(' ' + char if is_emoji(char) else char for char in text).strip()
 
+def add_space(df, header1, new_header, char_list):
+    df[new_header] = df[header1].apply(lambda text:add_space_between_char(text, char_list))
+    spaced_list = df[new_header]
+    return df, spaced_list
+
+def remove_multi_space(df, header1, new_header):
+    df[new_header] = df[header1].apply(lambda text:remove_multi(text))
+    remove_multi_space_list = df[new_header]
+    return df, remove_multi_space_list
+
 def demojize(text):
-    text_space = add_space(text)
+    text_space = add_space_by_emjoi(text)
     text = emoji.demojize(text_space)   
     return text
 
@@ -227,17 +291,66 @@ def regularize(df, header1, new_header, regex):
     regularized_list = df[new_header]
     return df, regularized_list
 
+def find_first_n_keywords(df, header, n, char_list):
+    stop_words = set(stopwords.words('english')) 
+    column = df[header]
+    first_n_list = []
+    
+    for text_row in column:
+        word_tokens = get_unique_word(text_row)
+        # word_tokens = word_tokenize(text_row) 
+        filtered = [w for w in word_tokens if not w in stop_words]
+        filtered_char = [w for w in filtered if not w in char_list] 
+        filtered_space = [w for w in filtered_char if w != ''] 
+        first_n_row = filtered_space[:n]
+        first_n_row = TreebankWordDetokenizer().detokenize(first_n_row)
+        first_n_list.append(first_n_row)
+    df['first_'+str(n)+'_keywords_in_'+header] = first_n_list
+    return df    
 
-def most_common_histogram(df, header, count):
+def unique(list1): 
+      
+    # insert the list to the set 
+    list_set = set(list1) 
+    # convert the set to the list 
+    unique_list = (list(list_set))
+    
+    return unique_list
+
+
+def find_first_n_words(df, header, n): 
+    column = df[header]
+    first_n_list = []
+    
+    for text_row in column:
+        word_tokens = get_unique_word(text_row)
+        first_n_row = word_tokens[:n]
+        first_n_row = TreebankWordDetokenizer().detokenize(first_n_row)
+        first_n_list.append(first_n_row)
+    df['first_'+str(n)+'_words_in_'+header] = first_n_list
+    return df
+
+def most_common_histogram(df, header, count, char_list):
+    stop_words = set(stopwords.words('english'))  
+
     # unique = set(df[header].str.lower().str.split(' ').sum())
     words = []
     for comment in df[header]:
-        words.append(comment.split(' '))
+        words.append(comment.split())
+                     
     unique_word_list = list(itertools.chain(*words))
+
+    # remove stop words, special characters, and spaces from histogram list.
+    filtered = [w for w in unique_word_list if not w in stop_words]  
+    filtered_char = [w for w in filtered if not w in char_list] 
+    filtered_space = [w for w in filtered_char if w != ''] 
     # Create counter
-    count_of_words = collections.Counter(unique_word_list)
+    count_of_words = collections.Counter(filtered_space)
     
     most_common_comments = count_of_words.most_common(count)
+    
+    unique_word_list = unique(unique_word_list)
+    
     return most_common_comments, unique_word_list
 
 def plot_histogram(histo_list, title):
@@ -263,7 +376,7 @@ def test_com(x, regex):
         x = re.sub(regex," ",x)
         
         # remove multi-spaces
-        x = ' '.join(x.split())
+        # x = ' '.join(x.split())
     except:
         x = ''
     return x 
@@ -286,8 +399,68 @@ def expand_contractions(text, cont):
     text = text_list[0]
     return text
 
+def get_unique_word(sentence):
+    individual_words = sentence.split(' ')
+    return individual_words
 
+def add_space_between_char(text, char_list):
+    return ''.join(' ' + char + ' '  if char in char_list else char for char in text).strip()
 
+def remove_multi(text):
+    return re.sub(' +', ' ',text)
 
+def remove_char(character, text):
+    print(text)
+    try:
+        sentence = remove_multi(re.sub(character, '',text))
+    except:
+        sentence =  ''
+    return sentence
+    
+def remove_character(df, header1, character):
+    df[header1] = df[header1].apply(lambda text:remove_char(character, text))
+    remove_character_column = df[header1]
+    return df, remove_character_column
 
+def top_n_words(df, header, count, char_list):
+    stop_words = set(stopwords.words('english'))  
+
+    # unique = set(df[header].str.lower().str.split(' ').sum())
+    words = []
+    for comment in df[header]:
+        try:
+            temp = comment.split()
+        except:
+            continue
+        temp = temp[:count]
+        # print(len(temp) <= count)
+        words.append(temp)
+                     
+    unique_word_list = list(itertools.chain(*words))
+
+    # remove stop words, special characters, and spaces from histogram list.
+    # filtered = [w for w in unique_word_list if not w in stop_words]  
+    filtered_char = [w for w in unique_word_list if not w in char_list] 
+    filtered_space = [w for w in filtered_char if w != ''] 
+    # Create counter
+    count_of_words = collections.Counter(filtered_space)
+    
+    most_common_comments = count_of_words.most_common(count)
+    
+    unique_word_list = unique(unique_word_list)
+    
+    return most_common_comments, unique_word_list
+
+def get_sentence_length_histo(df, header, color):
+    comment_list= df[header]
+    comment_array = []
+    for comment in comment_list:
+        try:
+            comment_array.append(len(comment.split()))
+        except:
+            continue      
+    comment_len_list = [i for i in comment_array if i!=0]
+    plt.hist(comment_len_list, bins=range(min(comment_len_list), 60, 1), 
+              alpha=0.6, color=color, density=True)
+    return comment_len_list
     

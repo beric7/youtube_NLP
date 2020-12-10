@@ -20,9 +20,9 @@ tokenizer = transformers.BertTokenizer.from_pretrained(PRE_TRAINED_MODEL_NAME)
 class_names = ['1', '2', '3']
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-save_location = 'C://Users/Eric Bianchi/Desktop/'
+save_location = 'C://Users/Eric Bianchi/Desktop/csv_files/'
 query = "Childish Gambino - This Is America (Official Video)"
-dataset_csv = save_location + query + '_cleaned_dataset.csv'
+dataset_csv = save_location + query + '_refined.csv'
 destination_csv = save_location + query + '_sentiment.csv'
 class SentimentClassifier(nn.Module):
 
@@ -78,17 +78,26 @@ def iterate_csv_sentiment(tokenizer, source_csv):
     model = initialize_model()
     sentiment_array = []
     for index, row in tqdm(dataset_dataframe.iterrows()):
-        comment_text = row['clean_comments']
+        comment_text = row['no_space_comment']
         sentiment = predict_sentiment(comment_text, tokenizer, model)
         sentiment_array.append(sentiment)
         
-    sentiment_array = iterate_csv_sentiment(tokenizer, dataset_csv)
+    # sentiment_array = iterate_csv_sentiment(tokenizer, dataset_csv)
     sent_df = pd.DataFrame(sentiment_array)
-    concat = pd.concat([dataset_dataframe, sent_df], axis='col')
+    # concat = pd.concat([dataset_dataframe, sent_df], axis='col')
     
-    return sent_df, concat
-
-sent_df, concat = iterate_csv_sentiment(tokenizer, dataset_csv)
+    return sent_df
+'''
+sent_df = iterate_csv_sentiment(tokenizer, dataset_csv)
 dataset_dataframe = clean_up_csv(dataset_csv)
 concat = pd.concat([dataset_dataframe, sent_df], axis=1)
+
 concat.to_csv(destination_csv,encoding='utf-8-sig', index = False, line_terminator='\n')
+'''
+
+
+df = pd.read_csv(dataset_csv, lineterminator='\n', encoding='utf-8')
+
+df['sentiment'] = sent_df
+
+df.to_csv(destination_csv,encoding='utf-8-sig', index = False)
