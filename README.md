@@ -11,5 +11,5 @@ Final Project for Deep Learning ECE 6554 (Virginia Tech)
 
 
 <img src="https://github.com/beric7/youtube_NLP/blob/main/Figures/Access_token.png" width="400">
-<img src="https://github.com/beric7/youtube_NLP/blob/main/Figures/Data_annotation_flow_maxlength.png" width="600")
-<img src="https://github.com/beric7/youtube_NLP/blob/main/Figures/Comment_Reply_histo_zoom.png" width="400")
+<img src="https://github.com/beric7/youtube_NLP/blob/main/Figures/Data_annotation_flow_maxlength.png" width="600">
+<img src="https://github.com/beric7/youtube_NLP/blob/main/Figures/Comment_Reply_histo_zoom.png" width="400">
