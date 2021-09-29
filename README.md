@@ -1,7 +1,7 @@
 # youtube NLP
 Youtube Comment Generator
 
-Final Project for Deep Learning ECE 6524 (Virginia Tech)
+Final Project for Deep Learning ECE 6524 (Virginia Tech) **\[[Paper](Deep_Learning_Bianchi_Sepsadar_Project.pdf)\]**
 
 **Objectives:**
 - Read YouTube data
